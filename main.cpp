@@ -66,10 +66,24 @@ void draw_point_cloud(const Container& points, const glm::vec3& color, const rtk
     }
 }
 
-void Camera_Loop(rtk::window& win, rtk::gl::mesh& gl_mesh_chair, rtk::gl::mesh& gl_mesh_table,
+void Camera_Loop(const Mesh& m_chair, const Mesh& m_table,
                  const std::vector<glm::vec3>& samples_chair, const std::vector<glm::vec3>& samples_table,
                  const std::vector<Triangle>& IBS)
 {
+    using namespace rtk::literals;
+    rtk::rtk_init init_rtk;
+
+    rtk::window win({1024_px, 768_px}, "Geometry");
+
+    rtk::geometry::mesh geomesh_chair;
+    geomesh_chair.set_vertices(m_chair.GetVertexData());
+    geomesh_chair.set_faces(m_chair.GetFaces());
+    rtk::gl::mesh gl_mesh_chair(geomesh_chair);
+
+    rtk::geometry::mesh geomesh_table;
+    geomesh_table.set_vertices(m_table.GetVertexData());
+    geomesh_table.set_faces(m_table.GetFaces());
+    rtk::gl::mesh gl_mesh_table(geomesh_table);
 
     rtk::camera cam;
 
@@ -99,11 +113,10 @@ void Camera_Loop(rtk::window& win, rtk::gl::mesh& gl_mesh_chair, rtk::gl::mesh& 
     mesh_shader.set_variable("projection", cam.GetProjectionMatrix());
     mesh_shader.set_variable("model", glm::mat4());
 
-
     std::vector<glm::vec3> IBS_cloud;
     IBS_cloud.reserve(IBS.size() * 3);
 
-    std::vector<const std::uint32_t> faceData;
+    std::vector<std::uint32_t> faceData;
 
     unsigned int j = 0;
     for (int i = 0; i < IBS.size(); i++)
@@ -121,7 +134,7 @@ void Camera_Loop(rtk::window& win, rtk::gl::mesh& gl_mesh_chair, rtk::gl::mesh& 
     geomesh_IBS.set_vertices(IBS_cloud);
     geomesh_IBS.set_faces(faceData);
     rtk::gl::mesh gl_mesh_IBS(geomesh_IBS);
-    
+
     win.lock_cursor(true);
 
     while (!win.should_close())
@@ -143,7 +156,7 @@ void Camera_Loop(rtk::window& win, rtk::gl::mesh& gl_mesh_chair, rtk::gl::mesh& 
 
 void createIBS(std::vector<Triangle>& IBS, const std::vector<int> &f_vert, const std::vector<double> &v, int j)
 {
-    std::array<glm::vec3, 6> s;
+    std::array<glm::vec3, 10> s;
 //    static char s[6][128];
     int n = f_vert[j];
 
@@ -167,27 +180,12 @@ void createIBS(std::vector<Triangle>& IBS, const std::vector<int> &f_vert, const
 
 int main()
 {
-    using namespace rtk::literals;
-    rtk::rtk_init init_rtk;
-
-    rtk::window win({1024_px, 768_px}, "Geometry");
-
     Mesh m_chair(1);
     m_chair.LoadMesh("../inputs/pair1/chair1.off");
     m_chair.Translate({0, 60, -10});
 
-    rtk::geometry::mesh geomesh_chair;
-    geomesh_chair.set_vertices(m_chair.GetVertexData());
-    geomesh_chair.set_faces(m_chair.GetFaces());
-    rtk::gl::mesh gl_mesh_chair(geomesh_chair);
-
     Mesh m_table(2);
     m_table.LoadMesh("../inputs/pair1/table1.off");
-
-    rtk::geometry::mesh geomesh_table;
-    geomesh_table.set_vertices(m_table.GetVertexData());
-    geomesh_table.set_faces(m_table.GetFaces());
-    rtk::gl::mesh gl_mesh_table(geomesh_table);
 
     auto samples_chair = m_chair.SamplePoints(100);
     auto samples_table = m_table.SamplePoints(100);
@@ -250,7 +248,7 @@ int main()
                 {
                     if (id < 400 && neigh[i] >= 400 && neigh[i] < 500)
                     {
-                        if (f_vert[j] <= 6)
+                        if (f_vert[j] <= 10)
                         {
                             createIBS(IBS, f_vert, v, j);
                         }
@@ -261,7 +259,7 @@ int main()
         } while (cl.inc());
     }
 
-    Camera_Loop(win, gl_mesh_chair, gl_mesh_table, samples_chair, samples_table, IBS);
+    Camera_Loop(m_chair, m_table, samples_chair, samples_table, IBS);
 
     return 0;
 }
