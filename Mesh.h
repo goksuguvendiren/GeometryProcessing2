@@ -15,6 +15,15 @@ enum class DataStructure
     FibHeap
 };
 
+struct BoundingBox
+{
+    glm::vec3 mins;
+    glm::vec3 maxs;
+
+    BoundingBox() : mins({0, 0, 0}), maxs({0, 0, 0}) {}
+    BoundingBox(glm::vec3 ns, glm::vec3 xs) : mins(ns), maxs(xs) {}
+};
+
 class Mesh
 {
     int id;
@@ -28,6 +37,8 @@ class Mesh
 
     void loadOFF(std::ifstream& stream);
     void loadOBJ(std::ifstream& stream);
+
+    BoundingBox box;
 
 public:
     Mesh(int mid = 1) : id(mid){}
@@ -75,6 +86,7 @@ public:
         return data;
     }
 
+    const BoundingBox& Box() const { return box; }
     std::vector<glm::vec3> GetVertexData() const
     {
         std::vector<glm::vec3> data;
@@ -87,8 +99,10 @@ public:
         return data;
     }
 
-
+    void CreateBoundingBox();
 
     auto FindMin(const std::vector<std::pair<float, unsigned int>>& costs, const std::vector<bool>& beenProcessed) const;
     const std::vector<int>& GetNeighbors(unsigned int id) { return neighbors[id]; }
+
+    void Translate(glm::vec3 translation);
 };
